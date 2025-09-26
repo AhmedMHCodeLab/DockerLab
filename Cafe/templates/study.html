@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <h1>🎧 Virtual Café — Study with Me</h1>
+    <p class="lead">Set your timer, switch on the café ambience, and get to work.</p>
+  </section>
+
+  <section class="study-grid" style="margin-top:18px;">
+    <!-- Timer Card -->
+    <div class="hero" style="text-align:center;">
+      <div id="mode" style="font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#555;">Focus</div>
+      <div id="clock" style="font-family:'Playfair Display',serif; font-size:clamp(42px,8vw,96px); margin:6px 0 12px;">25:00</div>
+
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn" id="start">Start</button>
+        <button class="btn outline" id="pause">Pause</button>
+        <button class="btn outline" id="reset">Reset</button>
+        <button class="btn outline" id="skip">Skip</button>
+      </div>
+
+      <div style="margin-top:14px; color:#555; font-size:14px;">
+        Focus <input id="focusMin" type="number" min="1" max="120" value="25" style="width:60px;"> min
+        • Break <input id="breakMin" type="number" min="1" max="60" value="5" style="width:60px;"> min
+      </div>
+    </div>
+
+    <!-- Ambience + Guidelines -->
+    <div class="hero">
+      <h2 style="margin-bottom:8px;">Cafe ambience</h2>
+      <p class="lead" style="margin-bottom:12px;">Subtle crowd murmur generated locally (no files). Great with low volume.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" id="ambience-toggle">Turn On</button>
+        <input id="ambience-vol" type="range" min="0" max="100" value="35" aria-label="volume" />
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,.08); margin:18px 0;">
+      <h3 style="margin-bottom:6px;">House rules</h3>
+      <ul style="margin:0; padding-left:18px; color:#555;">
+        <li>One tab. One task. No drift.</li>
+        <li>Work in silence. Ambient noises only.</li>
+        <li>Stand, stretch, breathe on breaks.</li>
+      </ul>
+    </div>
+  </section>
+
+  <script>
+  // ---------- Pomodoro ----------
+  (function(){
+    let focusMin = 25, breakMin = 5;
+    let mode = 'focus'; // 'focus' or 'break'
+    let remaining = focusMin * 60;
+    let timerId = null;
+
+    const elClock = document.getElementById('clock');
+    const elMode  = document.getElementById('mode');
+    const elFocus = document.getElementById('focusMin');
+    const elBreak = document.getElementById('breakMin');
+
+    function fmt(s){ const m = Math.floor(s/60), ss = (s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+    function render(){ elClock.textContent = fmt(remaining); elMode.textContent = mode === 'focus' ? 'Focus' : 'Break'; }
+
+    function start(){
+      if (timerId) return;
+      timerId = setInterval(()=>{
+        remaining -= 1; if (remaining <= 0){ beep(); nextMode(); }
+        render();
+      }, 1000);
+    }
+    function pause(){ if (timerId){ clearInterval(timerId); timerId = null; } }
+    function reset(){
+      pause();
+      focusMin = clamp(parseInt(elFocus.value||'25',10), 1, 120);
+      breakMin = clamp(parseInt(elBreak.value||'5',10), 1, 60);
+      remaining = (mode === 'focus' ? focusMin : breakMin) * 60;
+      render();
+    }
+    function skip(){ nextMode(); render(); }
+    function nextMode(){
+      mode = (mode === 'focus') ? 'break' : 'focus';
+      remaining = (mode === 'focus' ? focusMin : breakMin) * 60;
+    }
+    function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+
+    // simple beep
+    function beep(){
+      try{
+        const ac = new (window.AudioContext||window.webkitAudioContext)();
+        const o = ac.createOscillator(); const g = ac.createGain();
+        o.type='sine'; o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(0.0001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.2, ac.currentTime+0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+0.4);
+        o.start(); o.stop(ac.currentTime+0.4);
+      }catch(e){}
+    }
+
+    document.getElementById('start').onclick = start;
+    document.getElementById('pause').onclick = pause;
+    document.getElementById('reset').onclick = reset;
+    document.getElementById('skip').onclick  = skip;
+
+    render();
+  })();
+
+  // ---------- Cafe Ambience (WebAudio filtered noise) ----------
+  (function(){
+    let ctx, src, gain, lp, hp, running = false;
+
+    function ensureCtx(){
+      if (ctx) return;
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // noise buffer
+      const bufferSize = 2 * ctx.sampleRate;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1); // white noise
+
+      src = ctx.createBufferSource();
+      src.buffer = buffer; src.loop = true;
+
+      // filters to make a soft murmur
+      lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 900;
+      hp = ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 120;
+
+      gain = ctx.createGain(); gain.gain.value = 0.0;
+
+      src.connect(lp); lp.connect(hp); hp.connect(gain); gain.connect(ctx.destination);
+    }
+
+    function start(){
+      ensureCtx();
+      if (running) return;
+      // rebuild and start a new BufferSource (one-shot nature)
+      src = ctx.createBufferSource();
+      const buffer = ctx.createBuffer(1, 2*ctx.sampleRate, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i=0;i<data.length;i++) data[i] = (Math.random()*2-1);
+      src.buffer = buffer; src.loop = true;
+      src.connect(lp);
+      gain.gain.setTargetAtTime(parseFloat(volInput.value)/200, ctx.currentTime, 0.2);
+      src.start();
+      running = true;
+    }
+
+    function stop(){
+      if (!running) return;
+      gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2);
+      try{ src.stop(ctx.currentTime+0.25); }catch(e){}
+      running = false;
+    }
+
+    const btn = document.getElementById('ambience-toggle');
+    const volInput = document.getElementById('ambience-vol');
+
+    btn.onclick = () => {
+      if (!running){ start(); btn.textContent = 'Turn Off'; }
+      else { stop(); btn.textContent = 'Turn On'; }
+    };
+    volInput.oninput = () => { if (gain) gain.gain.value = parseFloat(volInput.value)/200; };
+  })();
+  </script>
+{% endblock %}

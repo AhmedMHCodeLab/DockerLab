@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block page_bg %}
+  <style>
+    /* Full-bleed page background (behind stickers & content) */
+    .page-bg{
+      position: fixed; inset: 0; z-index: 0;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: rgba(255,255,255,0.2); /* graceful fallback */
+    }
+    .page-bg::after{
+      content: "";
+      position: absolute;
+      inset: 0;
+      /* No background overlay */
+    }
+    /* Per-page images (no inline style so the linter stays calm) */
+    .page-bg--coffee{
+      background-image: url("{{ url_for('static', filename='img/coffee-bg.jpg') }}");
+    }
+    .page-bg--pastries{
+      background-image: url("{{ url_for('static', filename='img/pastries-bg.jpg') }}");
+    }
+  </style>
+  {% if theme == 'coffee' %}
+    <div class="page-bg page-bg--coffee"></div>
+  {% elif theme == 'pastries' %}
+    <div class="page-bg page-bg--pastries"></div>
+  {% else %}
+    <div class="page-bg"></div>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="hero">
+  <h1>{{ icon }} {{ title }}</h1>
+  <p class="lead">Curated selections for the discerning palate.</p>
+    {% if theme == 'coffee' %}
+      <p class="lead">Specialty beans & rituals, plus the café classics.</p>
+    {% else %}
+      <p class="lead">Fresh bakes, global sweets, and house favorites.</p>
+    {% endif %}
+  </section>
+
+  {% if groups %}
+    {% for group in groups %}
+      <h2 style="font-family:'Playfair Display',serif; margin:22px 4px 12px;">{{ group.title }}</h2>
+      <section class="grid">
+        {# NOTE: bracket access avoids colliding with dict.items() #}
+        {% for it in group['items'] %}
+          <article class="menu-item">
+            <div>
+              <div style="font-weight:700; font-size:18px">{{ it.name }}</div>
+              <div style="font-size:14px; color:#666">{{ it.desc }}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <div class="price">${{ '%.2f'|format(it.price) }}</div>
+              <form method="post" action="{{ url_for('add_item') }}">
+                <input type="hidden" name="name" value="{{ it.name }}">
+                <input type="hidden" name="price" value="{{ it.price }}">
+                <input type="hidden" name="ref" value="{{ request.path }}">
+                <button class="btn" type="submit">+ Add to tab</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    <div style="margin-top:18px; text-align:center;">
+      <a class="btn outline" href="{{ url_for('tab_view') }}"
+        style="background: rgba(255,255,255,0.65); color:#111; border:1px solid rgba(255,255,255,0.8);
+             backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+             box-shadow: 0 6px 18px rgba(0,0,0,0.08); border-radius:8px; padding:8px 14px;">
+        🧾 View Tab
+      </a>
+    </div>
+  {% else %}
+    {# Fallback if someone passes flat `items` accidentally #}
+    {% if items %}
+      <section class="grid" style="margin-top:16px;">
+        {% for it in items %}
+          <article class="menu-item">
+            <div>
+              <div style="font-weight:700; font-size:18px">{{ it.name }}</div>
+              <div style="font-size:14px; color:#666">{{ it.desc }}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <div class="price">${{ '%.2f'|format(it.price) }}</div>
+              <form method="post" action="{{ url_for('add_item') }}">
+                <input type="hidden" name="name" value="{{ it.name }}">
+                <input type="hidden" name="price" value="{{ it.price }}">
+                <input type="hidden" name="ref" value="{{ request.path }}">
+                <button class="btn" type="submit">+ Add to tab</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    {% endif %}
+  {% endif %}
+{% endblock %}

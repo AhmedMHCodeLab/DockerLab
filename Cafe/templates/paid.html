@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block page_bg %}
+  <style>
+    /* Full-bleed background behind stickers & content */
+    .page-bg{
+      position: fixed; inset: 0; z-index: 0;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: rgba(255,255,255,0.2); /* graceful fallback */
+    }
+    .page-bg::after{
+      content:""; position:absolute; inset:0;
+      /* No overlay */
+    }
+    /* Pay page background image */
+    .page-bg--pay{
+      background-image: url("{{ url_for('static', filename='img/pay-bg.jpg') }}");
+    }
+  </style>
+  <div class="page-bg page-bg--pay"></div>
+{% endblock %}
+
+{% block content %}
+  <section class="receipt paper" style="margin-top: 24px;">
+  <h2>Thank you for your patronage</h2>
+  <div class="line"><span>Subtotal</span><strong>${{ '%.2f'|format(total) }}</strong></div>
+  <div class="line"><span>Complimentary Discount</span><strong>–${{ '%.2f'|format(total) }}</strong></div>
+    <hr style="border:none;border-top:1px dashed #d7cfbf;margin:10px 0;">
+    <div class="line" style="font-weight:700;">
+      <span>Amount Due</span><strong>$0.00</strong>
+    </div>
+
+    <p class="muted" style="margin-top:12px;">
+      As a gesture of hospitality, your order is on the house. We appreciate your presence.
+    </p>
+
+    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+      <a class="btn" href="{{ MEET_LINK }}" target="_blank" rel="noopener">📚 Join the Study Session</a>
+      <a class="btn outline" href="{{ url_for('index') }}">← Back to Home</a>
+    </div>
+  </section>
+{% endblock %}

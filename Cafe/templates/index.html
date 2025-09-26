@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block page_bg %}
+  <style>
+    .page-bg{
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("{{ url_for('static', filename='img/welcome-bg.jpg') }}");
+      background-position: center; background-size: cover;
+      background-repeat: no-repeat; background-attachment: fixed;
+    }
+    .page-bg::after{
+      content: "";
+      position: absolute;
+      inset: 0;
+      /* No background overlay */
+    }
+  </style>
+  <div class="page-bg"></div>
+{% endblock %}
+
+{% block content %}
+  <section class="hero">
+  <h1>Welcome to Coffee & Bakery — What may we prepare for you today?</h1>
+  <p class="lead">Artisan coffee. Exquisite pastries. Exceptional company.</p>
+    <div style="margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+  <a class="btn" href="{{ url_for('coffee') }}">☕ Explore Our Coffee Selection</a>
+  <a class="btn outline" href="{{ url_for('pastries') }}">🥐 Discover Our Pastries</a>
+  <a class="btn blur" href="{{ url_for('tab_view') }}">🧾 Your Personal Tab</a>
+    </div>
+  </section>
+{% endblock %}

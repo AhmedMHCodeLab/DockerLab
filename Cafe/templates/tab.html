@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{# BG renders behind stickers (z=0), stickers stay at z=1, content z=2 #}
+{% block page_bg %}
+  <style>
+    .page-bg{
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("{{ url_for('static', filename='img/tab-bg.jpg') }}");
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .page-bg::after{
+      content:""; position:absolute; inset:0;
+      /* No overlay */
+    }
+  </style>
+  <div class="page-bg"></div>
+{% endblock %}
+
+{% block head %}
+  <style>
+    .receipt.paper{
+      background: rgba(255,255,255,0.9);
+      padding: 18px;
+      border-radius: 6px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="hero" style="margin-bottom:16px;">
+  <h1>🧾 Your Tab</h1>
+  <p class="lead">A refined summary of your selections, presented with care.</p>
+  </section>
+
+  <div class="receipt paper">
+    <h2>COFFEE &amp; BAKERY</h2>
+    <div class="muted">Order summary</div>
+    <hr style="border:none;border-top:1px dashed #cfc7bb;margin:10px 0;">
+    {% if tab and tab|length > 0 %}
+      {% for it in tab %}
+        <div class="line">
+          <div>{{ it.qty }} × {{ it.name }}</div>
+          <div>${{ '%.2f'|format(it.price * it.qty) }}</div>
+        </div>
+      {% endfor %}
+      <hr style="border:none;border-top:1px dashed #cfc7bb;margin:10px 0;">
+      <div class="line"><strong>Total</strong><strong>${{ '%.2f'|format(total) }}</strong></div>
+    {% else %}
+  <div class="muted">Your tab is currently empty. Indulge in something delightful.</div>
+    {% endif %}
+    <hr style="border:none;border-top:1px dashed #cfc7bb;margin:10px 0 16px;">
+
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <a href="{{ url_for('coffee') }}" class="btn outline">+ Add Coffee</a>
+      <a href="{{ url_for('pastries') }}" class="btn outline">+ Add Pastries</a>
+      {% if tab and tab|length > 0 %}
+        <a href="{{ url_for('pay') }}" class="btn">Pay</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
