@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+build
+.git
+.gitignore
+Dockerfile*
+.vscode
+.env*
+*.log
+*.tsbuildinfo
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+node_modules
+.next
+.git
+*.md
+.env.local
+.env.*.local
+coverage
+.nyc_output
