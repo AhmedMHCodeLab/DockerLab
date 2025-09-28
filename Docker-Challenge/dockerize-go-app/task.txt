@@ -1,0 +1,11 @@
+
+### Build go application:
+1. Create a dockerfile which builds the go application
+2. All modules need to copied to the dockerfile in order for the go application to function
+3. The dockerfile should also expose the port required for the go application
+4. The dockerfile should execute the go binary
+
+hints:
+1. Download dependencies: "go mod download**
+2. Build binary: go build -o go-application
+3. You need to specify a working directory in your dockerfile
